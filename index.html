@@ -1,0 +1,1576 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CPU Mining Profit Calculator — zpool.ca</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap");
+
+      :root {
+        --bg: #080c10;
+        --bg2: #0d1117;
+        --bg3: #111820;
+        --bg4: #161e28;
+        --border: #1e2d3d;
+        --border2: #243444;
+        --accent: #00d4ff;
+        --accent2: #00ff88;
+        --accent3: #ff6b35;
+        --accent4: #ffd700;
+        --text: #c9d1d9;
+        --text2: #8b949e;
+        --text3: #495057;
+        --red: #ff4757;
+        --green: #00ff88;
+        --yellow: #ffd700;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+        --glow2: 0 0 20px rgba(0, 255, 136, 0.3);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 15px;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Scanline overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px
+        );
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      /* Grid background */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px 20px;
+      }
+
+      /* ── HEADER ── */
+      .header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .logo-area h1 {
+        font-family: "Orbitron", monospace;
+        font-size: 22px;
+        font-weight: 900;
+        color: var(--accent);
+        text-shadow: var(--glow);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .logo-area p {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 11px;
+        color: var(--text2);
+        margin-top: 4px;
+        letter-spacing: 1px;
+      }
+
+      .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 6px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 11px;
+        color: var(--text2);
+      }
+
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text3);
+        animation: pulse-gray 2s infinite;
+      }
+      .status-dot.live {
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+        animation: pulse-green 2s infinite;
+      }
+      .status-dot.error {
+        background: var(--red);
+        box-shadow: 0 0 8px var(--red);
+      }
+
+      @keyframes pulse-green {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+      @keyframes pulse-gray {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      .refresh-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        border-radius: 4px;
+        padding: 6px 16px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 11px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+      }
+      .refresh-btn:hover {
+        background: rgba(0, 212, 255, 0.1);
+        box-shadow: var(--glow);
+      }
+      .refresh-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .refresh-btn svg {
+        transition: transform 0.5s;
+      }
+      .refresh-btn.spinning svg {
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── CONFIG PANEL ── */
+      .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .config-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 16px;
+        transition: border-color 0.2s;
+      }
+      .config-card:hover {
+        border-color: var(--border2);
+      }
+
+      .config-card label {
+        display: block;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--accent);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .config-card input[type="number"] {
+        flex: 1;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 14px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        width: 100%;
+      }
+      .config-card input[type="number"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.15);
+      }
+      .config-card input[type="number"]::-webkit-inner-spin-button {
+        opacity: 0.3;
+      }
+
+      .unit-badge {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text2);
+        background: var(--bg4);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 4px 8px;
+        white-space: nowrap;
+      }
+
+      .config-card .hint {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 6px;
+      }
+
+      /* ── BEST COIN BANNER ── */
+      #best-banner {
+        display: none;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 255, 136, 0.08),
+          rgba(0, 212, 255, 0.05)
+        );
+        border: 1px solid var(--accent2);
+        border-radius: 8px;
+        padding: 16px 22px;
+        margin-bottom: 22px;
+        position: relative;
+        overflow: hidden;
+      }
+      #best-banner::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: var(--accent2);
+        box-shadow: 0 0 12px var(--accent2);
+      }
+      .best-inner {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+      .best-tag {
+        font-family: "Orbitron", monospace;
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--accent2);
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        border-radius: 3px;
+        padding: 3px 10px;
+      }
+      .best-algo-name {
+        font-family: "Orbitron", monospace;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--accent2);
+        text-shadow: var(--glow2);
+        letter-spacing: 1px;
+      }
+      .best-stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .best-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .best-stat-label {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text2);
+        letter-spacing: 1px;
+      }
+      .best-stat-value {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 15px;
+        color: var(--accent4);
+        text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+      }
+
+      /* ── SUMMARY STRIP ── */
+      .summary-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .sum-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 14px 16px;
+        text-align: center;
+      }
+      .sum-card .slabel {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        color: var(--text3);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .sum-card .sval {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .sum-card .sval.green {
+        color: var(--green);
+        text-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+      }
+      .sum-card .sval.red {
+        color: var(--red);
+        text-shadow: 0 0 12px rgba(255, 71, 87, 0.4);
+      }
+      .sum-card .sval.cyan {
+        color: var(--accent);
+        text-shadow: var(--glow);
+      }
+      .sum-card .sval.gold {
+        color: var(--yellow);
+        text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+      }
+
+      /* ── FILTER BAR ── */
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .search-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+      }
+      .search-wrap input {
+        width: 100%;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 4px;
+        padding: 8px 12px 8px 36px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .search-wrap input:focus {
+        border-color: var(--accent);
+      }
+      .search-wrap .sicon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text3);
+        font-size: 14px;
+      }
+      .search-wrap input::placeholder {
+        color: var(--text3);
+      }
+
+      .filter-btns {
+        display: flex;
+        gap: 8px;
+      }
+      .fbtn {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        color: var(--text2);
+        border-radius: 4px;
+        padding: 7px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+      }
+      .fbtn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .fbtn.active {
+        background: rgba(0, 212, 255, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* ── TABLE ── */
+      .table-wrap {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: auto;
+        max-height: 80vh; /* Scrollable area */
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+      }
+
+      thead tr {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg3);
+        border-bottom: 2px solid var(--border);
+      }
+
+      th {
+        padding: 12px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text2);
+        text-align: left;
+        white-space: nowrap;
+        user-select: none;
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+      th:hover {
+        color: var(--accent);
+      }
+      th.sorted {
+        color: var(--accent);
+      }
+      th .sort-arrow {
+        margin-left: 4px;
+        opacity: 0.5;
+      }
+      th.sorted .sort-arrow {
+        opacity: 1;
+      }
+
+      tbody tr {
+        border-bottom: 1px solid rgba(30, 45, 61, 0.6);
+        transition: background 0.15s;
+        cursor: pointer;
+      }
+      tbody tr:hover {
+        background: rgba(0, 212, 255, 0.04);
+      }
+      tbody tr.best-row {
+        background: rgba(0, 255, 136, 0.04);
+      }
+      tbody tr.best-row:hover {
+        background: rgba(0, 255, 136, 0.08);
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+
+      td {
+        padding: 11px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+
+      .td-rank {
+        color: var(--text3);
+        font-size: 11px;
+        width: 40px;
+        text-align: center;
+      }
+
+      .algo-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .algo-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text3);
+        flex-shrink: 0;
+      }
+      .algo-dot.active {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+      }
+      .algo-dot.zero {
+        background: var(--text3);
+      }
+
+      .algo-name-text {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .best-row .algo-name-text {
+        color: var(--accent2);
+      }
+
+      .best-crown {
+        font-size: 12px;
+        color: var(--accent4);
+      }
+
+      td .pos {
+        color: var(--green);
+      }
+      td .neg {
+        color: var(--red);
+      }
+      td .zero {
+        color: var(--text3);
+      }
+      td .cyan {
+        color: var(--accent);
+      }
+      td .gold {
+        color: var(--accent4);
+      }
+
+      .profit-bar-cell {
+        min-width: 120px;
+      }
+      .profit-bar {
+        position: relative;
+        height: 4px;
+        background: var(--bg4);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .profit-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--accent2);
+        transition: width 0.5s ease;
+      }
+      .profit-bar-fill.zero {
+        background: var(--text3);
+      }
+      .profit-bar-fill.neg {
+        background: var(--red);
+      }
+
+      .badge-zero {
+        background: rgba(73, 80, 87, 0.3);
+        border: 1px solid var(--text3);
+        color: var(--text3);
+        border-radius: 3px;
+        padding: 2px 8px;
+        font-size: 9px;
+        letter-spacing: 1px;
+      }
+
+      .loading-row td {
+        text-align: center;
+        padding: 60px;
+        color: var(--text2);
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+      }
+
+      .loader {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border2);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 10px;
+      }
+
+      /* Inline hashrate input in table */
+      .hashrate-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .hashrate-input {
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        color: var(--accent);
+        border-radius: 3px;
+        padding: 4px 7px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+        width: 72px;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        text-align: right;
+      }
+      .hashrate-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.15);
+      }
+      .hashrate-input::-webkit-inner-spin-button {
+        opacity: 0.3;
+      }
+      .hashrate-unit {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        color: var(--text3);
+        letter-spacing: 1px;
+      }
+
+      /* Factor badge */
+      .factor-badge {
+        display: inline-block;
+        font-size: 9px;
+        padding: 1px 6px;
+        border-radius: 3px;
+        letter-spacing: 1px;
+      }
+      .factor-badge.kh {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        color: var(--accent);
+      }
+      .factor-badge.mh {
+        background: rgba(255, 107, 53, 0.1);
+        border: 1px solid rgba(255, 107, 53, 0.3);
+        color: var(--accent3);
+      }
+
+      /* Footer */
+      .footer {
+        margin-top: 28px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .footer p {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text3);
+        letter-spacing: 1px;
+      }
+      .footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* Tooltip */
+      .tooltip-wrap {
+        position: relative;
+      }
+      .tooltip-wrap:hover .tt {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(-4px);
+      }
+      .tt {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%) translateY(0);
+        background: var(--bg4);
+        border: 1px solid var(--border2);
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text);
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        z-index: 100;
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        .logo-area h1 {
+          font-size: 16px;
+        }
+        .config-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .best-algo-name {
+          font-size: 16px;
+        }
+      }
+
+      /* Progress shimmer while loading factors */
+      @keyframes shimmer {
+        0% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.3;
+        }
+      }
+      .shimmer {
+        animation: shimmer 1.2s infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- HEADER -->
+      <header class="header">
+        <div class="logo-area">
+          <h1>⛏ Mining Profit Calc</h1>
+          <p>SOURCE: ZPOOL.CA · REAL-TIME ALGO PROFITABILITY</p>
+        </div>
+        <div class="status-bar">
+          <div class="status-pill">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">INITIALIZING</span>
+          </div>
+          <div class="status-pill" id="last-update-pill" style="display: none">
+            <span>UPDATED: </span><span id="last-update-time">—</span>
+          </div>
+          <button class="refresh-btn" id="refresh-btn" onclick="fetchAll()">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path
+                d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+              />
+            </svg>
+            REFRESH
+          </button>
+        </div>
+      </header>
+
+      <!-- CONFIG -->
+      <div class="config-grid">
+        <div class="config-card">
+          <label>💲 BTC Price (USD)</label>
+          <div class="input-row">
+            <input
+              type="number"
+              id="btc-price"
+              value="95000"
+              min="1"
+              step="1"
+            />
+            <span class="unit-badge">USD/BTC</span>
+          </div>
+          <p class="hint">// enter current BTC price</p>
+        </div>
+        <div class="config-card">
+          <label>🖥 VPS / Power Cost</label>
+          <div class="input-row">
+            <input type="number" id="vps-cost" value="5" min="0" step="0.1" />
+            <span class="unit-badge">USD/mo</span>
+          </div>
+          <p class="hint">// monthly electricity or VPS</p>
+        </div>
+        <div class="config-card">
+          <label>📊 Pool Fee (%)</label>
+          <div class="input-row">
+            <input
+              type="number"
+              id="pool-fee"
+              value="1"
+              min="0"
+              max="100"
+              step="0.1"
+            />
+            <span class="unit-badge">%</span>
+          </div>
+          <p class="hint">// zpool default: 1%</p>
+        </div>
+      </div>
+
+      <!-- BEST BANNER -->
+      <div id="best-banner">
+        <div class="best-inner">
+          <span class="best-tag">★ BEST ALGO</span>
+          <span class="best-algo-name" id="best-algo-name">—</span>
+          <div class="best-stats">
+            <div class="best-stat">
+              <span class="best-stat-label">mBTC/DAY</span>
+              <span class="best-stat-value" id="best-mbtc">—</span>
+            </div>
+            <div class="best-stat">
+              <span class="best-stat-label">USD/DAY</span>
+              <span class="best-stat-value" id="best-usd-day">—</span>
+            </div>
+            <div class="best-stat">
+              <span class="best-stat-label">NET/MONTH</span>
+              <span class="best-stat-value" id="best-net-month">—</span>
+            </div>
+            <div class="best-stat">
+              <span class="best-stat-label">UNIT</span>
+              <span class="best-stat-value" id="best-unit">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY STRIP -->
+      <div class="summary-strip" id="summary-strip" style="display: none">
+        <div class="sum-card">
+          <div class="slabel">Active Algos</div>
+          <div class="sval cyan" id="sum-active">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="slabel">Avg USD/Day</div>
+          <div class="sval" id="sum-avg-day">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="slabel">Best USD/Day</div>
+          <div class="sval green" id="sum-best-day">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="slabel">Best Net/Month</div>
+          <div class="sval gold" id="sum-best-month">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="slabel">VPS Cost/Mo</div>
+          <div class="sval red" id="sum-vps">—</div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="sicon">⌕</span>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search algorithm..."
+          />
+        </div>
+        <div class="filter-btns">
+          <button
+            class="fbtn active"
+            data-filter="all"
+            onclick="setFilter(this, 'all')"
+          >
+            ALL
+          </button>
+          <button
+            class="fbtn"
+            data-filter="active"
+            onclick="setFilter(this, 'active')"
+          >
+            ACTIVE
+          </button>
+          <button
+            class="fbtn"
+            data-filter="profitable"
+            onclick="setFilter(this, 'profitable')"
+          >
+            PROFITABLE
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <table id="main-table">
+          <thead>
+            <tr>
+              <th class="td-rank">#</th>
+              <th onclick="sortBy('algo')" id="th-algo">
+                ALGORITHM <span class="sort-arrow">↕</span>
+              </th>
+              <th onclick="sortBy('factor')">
+                UNIT <span class="sort-arrow">↕</span>
+              </th>
+              <th>HASHRATE</th>
+              <th onclick="sortBy('profitability')" id="th-prof">
+                PROFITABILITY <span class="sort-arrow">↕</span>
+              </th>
+              <th onclick="sortBy('mbtc')" id="th-mbtc">
+                mBTC/DAY <span class="sort-arrow">↕</span>
+              </th>
+              <th onclick="sortBy('usdday')" id="th-usd">
+                USD/DAY <span class="sort-arrow">↕</span>
+              </th>
+              <th onclick="sortBy('usdmonth')">
+                USD/MONTH <span class="sort-arrow">↕</span>
+              </th>
+              <th onclick="sortBy('netmonth')" id="th-net">
+                NET/MONTH <span class="sort-arrow">↕</span>
+              </th>
+              <th>VISUAL</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr class="loading-row">
+              <td colspan="10">
+                <span class="loader"></span>FETCHING LIVE DATA FROM ZPOOL.CA...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="footer">
+        <p>
+          DATA SOURCE: <a href="https://zpool.ca" target="_blank">ZPOOL.CA</a> ·
+          REFRESHED EVERY 60s · ALL VALUES IN USD
+        </p>
+        <p id="algo-count-footer">—</p>
+      </footer>
+    </div>
+
+    <script>
+      /* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+      const ALLOWED_ALGOS = ["minotaurx", "power2b", "hoohash-pepew"]; // Thêm tên thuật toán vào đây để lọc (ví dụ: ['ghostrider', 'minotaurx']). Để trống [] để lấy tất cả.
+      let algoData = {}; // algo -> { profitability, ts }
+      let factorCache = {}; // algo -> factor (0.001 or 1)
+      let algoHashrate = {}; // algo -> KH/s per-row, default 1
+      let sortCol = "netmonth";
+      let sortDir = -1;
+      let filterMode = "all";
+      let searchQuery = "";
+      let refreshTimer = null;
+
+      function getHashrate(algo) {
+        return algoHashrate[algo] !== undefined ? algoHashrate[algo] : 1;
+      }
+
+      function onHashrateChange(algo, val) {
+        const v = parseFloat(val);
+        algoHashrate[algo] = !isNaN(v) && v > 0 ? v : 1;
+        recalcRow(algo);
+        renderSummary();
+        updateBestBannerFromAll();
+      }
+
+      function recalcRow(algo) {
+        const d = algoData[algo];
+        if (!d || factorCache[algo] === undefined) return;
+        const { mbtcDay, usdDay, usdMonth, netMonth } = calcEarnings(
+          d.profitability,
+          factorCache[algo],
+          getHashrate(algo),
+        );
+        const vpsCost =
+          parseFloat(document.getElementById("vps-cost").value) || 5;
+        const isActive = d.profitability > 0;
+        const row = document.querySelector(`tr[data-algo="${algo}"]`);
+        if (!row) return;
+
+        const mbtcCell = row.querySelector(".cell-mbtc");
+        if (mbtcCell)
+          mbtcCell.innerHTML = isActive
+            ? `<span class="${mbtcDay > 0 ? "pos" : "zero"}">${fmt4(mbtcDay)}</span>`
+            : `<span class="zero">0.0000</span>`;
+
+        const usdDayCell = row.querySelector(".cell-usdday");
+        if (usdDayCell)
+          usdDayCell.innerHTML = isActive
+            ? `<span class="${usdDay > 0.001 ? "pos" : "zero"}">$${fmt4(usdDay)}</span>`
+            : `<span class="zero">$0.0000</span>`;
+
+        const usdMoCell = row.querySelector(".cell-usdmo");
+        if (usdMoCell)
+          usdMoCell.innerHTML = `<span class="${isActive && usdMonth > 0 ? "cyan" : "zero"}">$${fmt2(usdMonth)}</span>`;
+
+        const netCell = row.querySelector(".cell-net");
+        if (netCell) {
+          if (!isActive) {
+            netCell.innerHTML = `<span class="neg">-$${fmt2(vpsCost)}</span>`;
+          } else {
+            const cls = netMonth > 0 ? "pos gold" : "neg";
+            const sign = netMonth >= 0 ? "+" : "";
+            netCell.innerHTML = `<span class="${cls}">${sign}$${fmt2(netMonth)}</span>`;
+          }
+        }
+
+        const allMbtc = Object.entries(algoData)
+          .filter(([a]) => factorCache[a] !== undefined)
+          .map(
+            ([a, ad]) =>
+              calcEarnings(ad.profitability, factorCache[a], getHashrate(a))
+                .mbtcDay,
+          );
+        const maxMbtc = Math.max(...allMbtc, 0.0001);
+        const barFill = row.querySelector(".profit-bar-fill");
+        if (barFill) {
+          barFill.style.width =
+            Math.min((mbtcDay / maxMbtc) * 100, 100).toFixed(1) + "%";
+          barFill.className =
+            "profit-bar-fill " +
+            (!isActive ? "zero" : netMonth < 0 ? "neg" : "");
+        }
+      }
+
+      function updateBestBannerFromAll() {
+        const candidates = Object.entries(algoData)
+          .filter(
+            ([a, d]) => d.profitability > 0 && factorCache[a] !== undefined,
+          )
+          .map(([a, d]) => ({
+            algo: a,
+            factor: factorCache[a],
+            ...calcEarnings(d.profitability, factorCache[a], getHashrate(a)),
+          }));
+        if (!candidates.length) return;
+        const best = candidates.reduce(
+          (b, r) => (!b || r.netMonth > b.netMonth ? r : b),
+          null,
+        );
+        if (best) updateBestBanner(best);
+      }
+
+      /* ─────────────────────────────────────────────
+   FETCH PROFITABILITY
+───────────────────────────────────────────── */
+      async function fetchProfitability() {
+        const r = await fetch("api/proxy/zpool-profitability");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }
+
+      /* ─────────────────────────────────────────────
+   FETCH FACTOR FOR ONE ALGO
+   Endpoint: /ajax/algo_api_mbtc_mh_factor/{algo}
+   Returns a plain number: 0.001 (KH) or 1 (MH)
+───────────────────────────────────────────── */
+      async function fetchFactor(algo) {
+        if (factorCache[algo] !== undefined) return factorCache[algo];
+        try {
+          const r = await fetch(`api/proxy/zpool-factor/${algo}`);
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          const txt = (await r.text()).trim();
+          const val = parseFloat(txt);
+          if (!isNaN(val)) {
+            factorCache[algo] = val;
+            return val;
+          }
+        } catch (e) {}
+        // Default fallback: treat as KH
+        factorCache[algo] = 0.001;
+        return 0.001;
+      }
+
+      /* ─────────────────────────────────────────────
+   CALCULATE EARNINGS
+   factor = 0.001 → unit is mBTC/KH/day  → multiply directly
+   factor = 1     → unit is mBTC/MH/day  → divide KH by 1000 first
+───────────────────────────────────────────── */
+      function calcEarnings(profitability, factor, hashrateKH) {
+        // profitability is already in mBTC per the factor unit
+        // factor 0.001 → mBTC/KH/day: earnings = profitability * hashrateKH
+        // factor 1     → mBTC/MH/day: earnings = profitability * (hashrateKH / 1000)
+        let mbtcDay;
+        if (Math.abs(factor - 0.001) < 1e-6) {
+          // mBTC/KH/day
+          mbtcDay = profitability * hashrateKH;
+        } else {
+          // mBTC/MH/day → convert KH to MH
+          mbtcDay = profitability * (hashrateKH / 1000);
+        }
+
+        const btcPrice =
+          parseFloat(document.getElementById("btc-price").value) || 95000;
+        const poolFee =
+          parseFloat(document.getElementById("pool-fee").value) / 100 || 0.005;
+        const vpsCost =
+          parseFloat(document.getElementById("vps-cost").value) || 5;
+
+        mbtcDay = mbtcDay * (1 - poolFee);
+        const usdDay = (mbtcDay * btcPrice) / 1000; // mBTC → BTC → USD
+        const usdMonth = usdDay * 30;
+        const netMonth = usdMonth - vpsCost;
+
+        return { mbtcDay, usdDay, usdMonth, netMonth };
+      }
+
+      /* ─────────────────────────────────────────────
+   FETCH EVERYTHING
+───────────────────────────────────────────── */
+      async function fetchAll() {
+        const btn = document.getElementById("refresh-btn");
+        const dot = document.getElementById("status-dot");
+        const stxt = document.getElementById("status-text");
+
+        btn.disabled = true;
+        btn.classList.add("spinning");
+        dot.className = "status-dot";
+        stxt.textContent = "FETCHING...";
+
+        try {
+          const json = await fetchProfitability();
+          algoData = {};
+
+          // Take last value for each algo
+          for (const [algo, series] of Object.entries(json)) {
+            if (!Array.isArray(series) || series.length === 0) continue;
+
+            // Lọc theo danh sách ALLOWED_ALGOS nếu có giá trị
+            if (ALLOWED_ALGOS.length > 0 && !ALLOWED_ALGOS.includes(algo))
+              continue;
+
+            const last = series[series.length - 1];
+            const val = parseFloat(last[1]);
+            algoData[algo] = { profitability: val, ts: parseInt(last[0]) };
+            if (algoHashrate[algo] === undefined) algoHashrate[algo] = 1;
+          }
+
+          dot.className = "status-dot";
+          stxt.textContent = "LOADING FACTORS...";
+
+          // Fetch factors for all algos in parallel (batched)
+          const algos = Object.keys(algoData);
+          const BATCH = 8;
+          for (let i = 0; i < algos.length; i += BATCH) {
+            const batch = algos.slice(i, i + BATCH);
+            await Promise.all(batch.map((a) => fetchFactor(a)));
+            // Render partial results while loading
+            renderTable();
+          }
+
+          dot.className = "status-dot live";
+          stxt.textContent = "LIVE · " + algos.length + " ALGOS";
+
+          const d = new Date();
+          document.getElementById("last-update-pill").style.display = "flex";
+          document.getElementById("last-update-time").textContent =
+            d.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            });
+
+          renderTable();
+          renderSummary();
+        } catch (e) {
+          dot.className = "status-dot error";
+          stxt.textContent = "ERROR: " + e.message;
+          showError(e.message);
+        }
+
+        btn.disabled = false;
+        btn.classList.remove("spinning");
+
+        // Auto-refresh every 60s
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(fetchAll, 60000);
+      }
+
+      /* ─────────────────────────────────────────────
+   RENDER TABLE
+───────────────────────────────────────────── */
+      function renderTable() {
+        const vpsCost =
+          parseFloat(document.getElementById("vps-cost").value) || 5;
+        const q = searchQuery.toLowerCase();
+
+        // Build rows
+        let rows = Object.entries(algoData).map(([algo, d]) => {
+          const factor =
+            factorCache[algo] !== undefined ? factorCache[algo] : null;
+          const hashrateKH = getHashrate(algo);
+          const { mbtcDay, usdDay, usdMonth, netMonth } =
+            factor !== null
+              ? calcEarnings(d.profitability, factor, hashrateKH)
+              : { mbtcDay: null, usdDay: null, usdMonth: null, netMonth: null };
+          return {
+            algo,
+            profitability: d.profitability,
+            factor,
+            mbtcDay,
+            usdDay,
+            usdMonth,
+            netMonth,
+          };
+        });
+
+        // Filter
+        if (filterMode === "active")
+          rows = rows.filter((r) => r.profitability > 0);
+        if (filterMode === "profitable")
+          rows = rows.filter((r) => r.netMonth !== null && r.netMonth > 0);
+        if (q) rows = rows.filter((r) => r.algo.toLowerCase().includes(q));
+
+        // Sort
+        rows.sort((a, b) => {
+          let av, bv;
+          switch (sortCol) {
+            case "algo":
+              av = a.algo;
+              bv = b.algo;
+              break;
+            case "factor":
+              av = a.factor || 0;
+              bv = b.factor || 0;
+              break;
+            case "profitability":
+              av = a.profitability;
+              bv = b.profitability;
+              break;
+            case "mbtc":
+              av = a.mbtcDay || 0;
+              bv = b.mbtcDay || 0;
+              break;
+            case "usdday":
+              av = a.usdDay || 0;
+              bv = b.usdDay || 0;
+              break;
+            case "usdmonth":
+              av = a.usdMonth || 0;
+              bv = b.usdMonth || 0;
+              break;
+            case "netmonth":
+              av = a.netMonth || 0;
+              bv = b.netMonth || 0;
+              break;
+            default:
+              av = a.netMonth || 0;
+              bv = b.netMonth || 0;
+          }
+          if (typeof av === "string") return sortDir * av.localeCompare(bv);
+          return sortDir * (av - bv);
+        });
+
+        // Find best algo (highest netMonth among active)
+        const activeRows = rows.filter(
+          (r) => r.profitability > 0 && r.netMonth !== null,
+        );
+        const best = activeRows.reduce(
+          (best, r) => (!best || r.netMonth > best.netMonth ? r : best),
+          null,
+        );
+        if (best) updateBestBanner(best);
+
+        // Max values for bar scaling
+        const maxMbtc = Math.max(...rows.map((r) => r.mbtcDay || 0), 0.0001);
+
+        const tbody = document.getElementById("table-body");
+        if (rows.length === 0) {
+          tbody.innerHTML = `<tr class="loading-row"><td colspan="10">NO ALGORITHMS MATCH YOUR FILTER</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = rows
+          .map((r, i) => {
+            const isBest = best && r.algo === best.algo;
+            const isActive = r.profitability > 0;
+            const barPct =
+              maxMbtc > 0
+                ? Math.min(((r.mbtcDay || 0) / maxMbtc) * 100, 100)
+                : 0;
+            const barClass = !isActive ? "zero" : r.netMonth < 0 ? "neg" : "";
+
+            // Factor display
+            let factorHtml;
+            if (r.factor === null) {
+              factorHtml = `<span class="shimmer" style="color:var(--text3);font-size:10px;">···</span>`;
+            } else if (Math.abs(r.factor - 0.001) < 1e-6) {
+              factorHtml = `<span class="factor-badge kh">KH/s</span>`;
+            } else {
+              factorHtml = `<span class="factor-badge mh">MH/s</span>`;
+            }
+
+            const profStr = isActive
+              ? fmtSci(r.profitability)
+              : `<span class="badge-zero">INACTIVE</span>`;
+
+            const mbtcStr =
+              r.mbtcDay === null
+                ? `<span class="shimmer" style="color:var(--text3)">···</span>`
+                : isActive
+                  ? `<span class="${r.mbtcDay > 0 ? "pos" : "zero"}">${fmt4(r.mbtcDay)}</span>`
+                  : `<span class="zero">0.0000</span>`;
+
+            const usdDayStr =
+              r.usdDay === null
+                ? `<span class="shimmer" style="color:var(--text3)">···</span>`
+                : isActive
+                  ? `<span class="${r.usdDay > 0.001 ? "pos" : "zero"}">$${fmt4(r.usdDay)}</span>`
+                  : `<span class="zero">$0.0000</span>`;
+
+            const usdMoStr =
+              r.usdMonth === null
+                ? `<span class="shimmer" style="color:var(--text3)">···</span>`
+                : `<span class="${isActive && r.usdMonth > 0 ? "cyan" : "zero"}">$${fmt2(r.usdMonth)}</span>`;
+
+            let netStr;
+            if (r.netMonth === null) {
+              netStr = `<span class="shimmer" style="color:var(--text3)">···</span>`;
+            } else if (!isActive) {
+              netStr = `<span class="neg">-$${fmt2(vpsCost)}</span>`;
+            } else {
+              const cls = r.netMonth > 0 ? "pos gold" : "neg";
+              const sign = r.netMonth >= 0 ? "+" : "";
+              netStr = `<span class="${cls}">${sign}$${fmt2(r.netMonth)}</span>`;
+            }
+
+            const curHashrate = getHashrate(r.algo);
+
+            return `<tr class="${isBest ? "best-row" : ""}" data-algo="${r.algo}">
+      <td class="td-rank">${isBest ? "★" : i + 1}</td>
+      <td>
+        <div class="algo-cell">
+          <div class="algo-dot ${isActive ? "active" : "zero"}"></div>
+          <span class="algo-name-text">${r.algo}</span>
+          ${isBest ? '<span class="best-crown">♛</span>' : ""}
+        </div>
+      </td>
+      <td>${factorHtml}</td>
+      <td>
+        <div class="hashrate-input-wrap">
+          <input class="hashrate-input" type="number" min="0.001" step="any"
+            value="${curHashrate}"
+            title="Hashrate for ${r.algo}"
+            oninput="onHashrateChange('${r.algo}', this.value)"
+            onclick="event.stopPropagation()">
+          <span class="hashrate-unit">KH/s</span>
+        </div>
+      </td>
+      <td class="tooltip-wrap">${profStr}<span class="tt">${r.profitability.toExponential(4)} raw</span></td>
+      <td class="cell-mbtc">${mbtcStr}</td>
+      <td class="cell-usdday">${usdDayStr}</td>
+      <td class="cell-usdmo">${usdMoStr}</td>
+      <td class="cell-net">${netStr}</td>
+      <td class="profit-bar-cell">
+        <div class="profit-bar">
+          <div class="profit-bar-fill ${barClass}" style="width:${barPct.toFixed(1)}%"></div>
+        </div>
+      </td>
+    </tr>`;
+          })
+          .join("");
+
+        document.getElementById("algo-count-footer").textContent =
+          `SHOWING ${rows.length} OF ${Object.keys(algoData).length} ALGORITHMS`;
+      }
+
+      /* ─────────────────────────────────────────────
+   BEST BANNER
+───────────────────────────────────────────── */
+      function updateBestBanner(best) {
+        document.getElementById("best-banner").style.display = "block";
+        document.getElementById("best-algo-name").textContent =
+          best.algo.toUpperCase();
+        document.getElementById("best-mbtc").textContent = fmt4(
+          best.mbtcDay || 0,
+        );
+        document.getElementById("best-usd-day").textContent =
+          "$" + fmt4(best.usdDay || 0);
+        const net = best.netMonth || 0;
+        const sign = net >= 0 ? "+" : "";
+        document.getElementById("best-net-month").textContent =
+          sign + "$" + fmt2(net);
+        const fac = best.factor;
+        document.getElementById("best-unit").textContent =
+          fac !== null
+            ? Math.abs(fac - 0.001) < 1e-6
+              ? "mBTC/KH/day"
+              : "mBTC/MH/day"
+            : "···";
+      }
+
+      /* ─────────────────────────────────────────────
+   SUMMARY STRIP
+───────────────────────────────────────────── */
+      function renderSummary() {
+        const vpsCost =
+          parseFloat(document.getElementById("vps-cost").value) || 5;
+
+        const rows = Object.entries(algoData)
+          .filter(
+            ([a, d]) => d.profitability > 0 && factorCache[a] !== undefined,
+          )
+          .map(([a, d]) =>
+            calcEarnings(d.profitability, factorCache[a], getHashrate(a)),
+          );
+
+        if (rows.length === 0) return;
+
+        document.getElementById("summary-strip").style.display = "grid";
+        document.getElementById("sum-active").textContent = rows.length;
+        const avgDay = rows.reduce((s, r) => s + r.usdDay, 0) / rows.length;
+        const bestDay = Math.max(...rows.map((r) => r.usdDay));
+        const bestNet = Math.max(...rows.map((r) => r.netMonth));
+
+        document.getElementById("sum-avg-day").textContent = "$" + fmt4(avgDay);
+        document.getElementById("sum-avg-day").className =
+          "sval " + (avgDay > 0 ? "green" : "red");
+        document.getElementById("sum-best-day").textContent =
+          "$" + fmt4(bestDay);
+        document.getElementById("sum-best-month").textContent =
+          (bestNet >= 0 ? "+" : "") + "$" + fmt2(bestNet);
+        document.getElementById("sum-vps").textContent = "-$" + fmt2(vpsCost);
+      }
+
+      /* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+      function fmt4(v) {
+        if (v === null || isNaN(v)) return "—";
+        return Math.abs(v) < 0.0001 ? v.toExponential(3) : v.toFixed(4);
+      }
+      function fmt2(v) {
+        if (v === null || isNaN(v)) return "—";
+        return Math.abs(v).toFixed(2);
+      }
+      function fmtSci(v) {
+        if (v === 0) return '<span class="zero">0</span>';
+        if (v >= 0.01) return `<span class="cyan">${v.toFixed(4)}</span>`;
+        return `<span class="cyan">${v.toExponential(3)}</span>`;
+      }
+
+      function showError(msg) {
+        document.getElementById("table-body").innerHTML = `
+    <tr class="loading-row">
+      <td colspan="9" style="color:var(--red)">
+        ⚠ FETCH ERROR: ${msg}<br>
+        <span style="color:var(--text2);font-size:11px;">Check network — CORS may block direct browser requests to some endpoints</span>
+      </td>
+    </tr>`;
+      }
+
+      /* ─────────────────────────────────────────────
+   SORT
+───────────────────────────────────────────── */
+      function sortBy(col) {
+        if (sortCol === col) sortDir *= -1;
+        else {
+          sortCol = col;
+          sortDir = -1;
+        }
+        document
+          .querySelectorAll("th")
+          .forEach((th) => th.classList.remove("sorted"));
+        const thMap = {
+          algo: "th-algo",
+          profitability: "th-prof",
+          mbtc: "th-mbtc",
+          usdday: "th-usd",
+          netmonth: "th-net",
+        };
+        if (thMap[col])
+          document.getElementById(thMap[col])?.classList.add("sorted");
+        renderTable();
+      }
+
+      /* ─────────────────────────────────────────────
+   FILTER
+───────────────────────────────────────────── */
+      function setFilter(el, mode) {
+        filterMode = mode;
+        document
+          .querySelectorAll(".fbtn")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+        renderTable();
+      }
+
+      /* ─────────────────────────────────────────────
+   LIVE RECALC ON INPUT CHANGE
+───────────────────────────────────────────── */
+      ["btc-price", "vps-cost", "pool-fee"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", () => {
+          renderTable();
+          renderSummary();
+        });
+      });
+
+      document.getElementById("search-input").addEventListener("input", (e) => {
+        searchQuery = e.target.value;
+        renderTable();
+      });
+
+      /* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+      fetchAll();
+    </script>
+  </body>
+</html>
