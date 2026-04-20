@@ -28,14 +28,11 @@ export default async function handler(req, res) {
 
   // Determine target URL
   let targetUrl = staticRoutes[requestPath];
-  const factorMatch = requestPath?.match(/^\/api\/zpool-factor\/([a-zA-Z0-9_]+)$/);
+  const factorMatch = requestPath?.match(/^\/api\/zpool-factor\/([a-zA-Z0-9_\-]+)$/);
 
   let useExbitronHeaders = false;
 
-  console.log({ requestPath, targetUrl, factorMatch })
-
   if (!targetUrl && factorMatch) {
-    console.log('Fetching factor for', factorMatch[1]);
     targetUrl = `https://zpool.ca/ajax/algo_api_mbtc_mh_factor/${factorMatch[1]}`;
   }
 
