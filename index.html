@@ -1011,7 +1011,11 @@
       const ALLOWED_ALGOS = ["minotaurx", "power2b", "hoohash-pepew"]; // Thêm tên thuật toán vào đây để lọc (ví dụ: ['ghostrider', 'minotaurx']). Để trống [] để lấy tất cả.
       let algoData = {}; // algo -> { profitability, ts }
       let factorCache = {}; // algo -> factor (0.001 or 1)
-      let algoHashrate = {}; // algo -> KH/s per-row, default 1
+      let algoHashrate = {
+        minotaurx: 1.5,
+        power2b: 0.5,
+        "hoohash-pepew": 20,
+      }; // algo -> KH/s per-row, default 1
       let sortCol = "netmonth";
       let sortDir = -1;
       let filterMode = "all";
