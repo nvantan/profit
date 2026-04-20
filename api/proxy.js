@@ -7,6 +7,16 @@ export default async function handler(req, res) {
     res.status(200).end(); return;
   }
 
+  // Determine the request path (handling Vercel rewrites)
+  let requestPath = req.query?.path ? `/api/${req.query.path}` : req.url;
+
+  // Normalize path: if it starts with /api/proxy/..., change it to /api/...
+  if (requestPath.startsWith('/api/proxy/')) {
+    requestPath = requestPath.replace('/api/proxy/', '/api/');
+  } else if (requestPath === '/api/proxy') {
+    requestPath = '/api/proxy'; // Keep as is for POST fallback
+  }
+
   // ZPool.ca static routes
   const staticRoutes = {
     '/api/zpool': 'https://zpool.ca/api/currencies',
@@ -17,11 +27,15 @@ export default async function handler(req, res) {
   };
 
   // Determine target URL
-  let targetUrl = staticRoutes[req.url];
-  const factorMatch = req.url?.match(/^\/api\/zpool-factor\/([a-zA-Z0-9_]+)$/);
+  let targetUrl = staticRoutes[requestPath];
+  const factorMatch = requestPath?.match(/^\/api\/zpool-factor\/([a-zA-Z0-9_]+)$/);
+
   let useExbitronHeaders = false;
 
+  console.log({ requestPath, targetUrl, factorMatch })
+
   if (!targetUrl && factorMatch) {
+    console.log('Fetching factor for', factorMatch[1]);
     targetUrl = `https://zpool.ca/ajax/algo_api_mbtc_mh_factor/${factorMatch[1]}`;
   }
 
@@ -55,7 +69,7 @@ export default async function handler(req, res) {
 
     const response = await fetch(targetUrl, fetchOptions);
     const contentType = response.headers.get('content-type') || '';
-    
+
     const data = contentType.includes('application/json')
       ? await response.json()
       : { message: await response.text() };
