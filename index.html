@@ -1008,13 +1008,25 @@
       /* ─────────────────────────────────────────────
    STATE
 ───────────────────────────────────────────── */
-      const ALLOWED_ALGOS = ["minotaurx", "power2b", "hoohash-pepew"]; // Thêm tên thuật toán vào đây để lọc (ví dụ: ['ghostrider', 'minotaurx']). Để trống [] để lấy tất cả.
+      const ALLOWED_ALGOS = [
+        "minotaurx",
+        "power2b",
+        "hoohash-pepew",
+        "yespower",
+        "yescrypt",
+        "lyra2z",
+        "scrypt",
+      ]; // Thêm tên thuật toán vào đây để lọc (ví dụ: ['ghostrider', 'minotaurx']). Để trống [] để lấy tất cả.
       let algoData = {}; // algo -> { profitability, ts }
       let factorCache = {}; // algo -> factor (0.001 or 1)
       let algoHashrate = {
-        minotaurx: 1.5,
-        power2b: 0.5,
+        minotaurx: 0.9,
+        power2b: 0.2,
         "hoohash-pepew": 20,
+        yespower: 0.25,
+        yescrypt: 0.4,
+        lyra2z: 65,
+        scrypt: 6.5,
       }; // algo -> KH/s per-row, default 1
       let sortCol = "netmonth";
       let sortDir = -1;
@@ -1043,7 +1055,7 @@
           getHashrate(algo),
         );
         const vpsCost =
-          parseFloat(document.getElementById("vps-cost").value) || 5;
+          parseFloat(document.getElementById("vps-cost").value) || 0.1;
         const isActive = d.profitability > 0;
         const row = document.querySelector(`tr[data-algo="${algo}"]`);
         if (!row) return;
