@@ -1025,8 +1025,11 @@
         "hoohash-pepew",
         "yespower",
         "yescrypt",
-        "lyra2z",
+        "allium",
         "scrypt",
+        "anime",
+        "argon2d1000",
+        "argon2d500",
       ]; // Thêm tên thuật toán vào đây để lọc (ví dụ: ['ghostrider', 'minotaurx']). Để trống [] để lấy tất cả.
       let algoData = {}; // algo -> { profitability, ts }
       let factorCache = {}; // algo -> factor (0.001 or 1)
@@ -1036,8 +1039,11 @@
         "hoohash-pepew": 20,
         yespower: 0.25,
         yescrypt: 0.4,
-        lyra2z: 65,
+        allium: 110,
         scrypt: 6.5,
+        anime: 100,
+        argon2d1000: 1,
+        argon2d500: 1.5,
       }; // algo -> KH/s per-row, default 1
       let sortCol = "netmonth";
       let sortDir = -1;
@@ -1384,12 +1390,16 @@
               factorHtml = `<span class="factor-badge mh">MH/s</span>`;
             }
 
-            const profUnit = r.factor !== null
-              ? Math.abs(r.factor - 0.001) < 1e-6 ? "mBTC/kH/Day"
-              : Math.abs(r.factor - 1) < 1e-6 ? "mBTC/MH/Day"
-              : Math.abs(r.factor - 1000) < 1e-6 ? "mBTC/GH/Day"
-              : ""
-              : "";
+            const profUnit =
+              r.factor !== null
+                ? Math.abs(r.factor - 0.001) < 1e-6
+                  ? "mBTC/kH/Day"
+                  : Math.abs(r.factor - 1) < 1e-6
+                    ? "mBTC/MH/Day"
+                    : Math.abs(r.factor - 1000) < 1e-6
+                      ? "mBTC/GH/Day"
+                      : ""
+                : "";
 
             const profStr = isActive
               ? fmtSci(r.profitability)
