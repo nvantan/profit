@@ -762,6 +762,17 @@
         z-index: 100;
       }
 
+      .prof-val-wrap {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+      .prof-unit {
+        font-size: 9px;
+        color: var(--text3);
+        letter-spacing: 0.5px;
+      }
+
       /* Responsive */
       @media (max-width: 640px) {
         .logo-area h1 {
@@ -1373,6 +1384,13 @@
               factorHtml = `<span class="factor-badge mh">MH/s</span>`;
             }
 
+            const profUnit = r.factor !== null
+              ? Math.abs(r.factor - 0.001) < 1e-6 ? "mBTC/kH/Day"
+              : Math.abs(r.factor - 1) < 1e-6 ? "mBTC/MH/Day"
+              : Math.abs(r.factor - 1000) < 1e-6 ? "mBTC/GH/Day"
+              : ""
+              : "";
+
             const profStr = isActive
               ? fmtSci(r.profitability)
               : `<span class="badge-zero">INACTIVE</span>`;
@@ -1429,7 +1447,13 @@
           <span class="hashrate-unit">KH/s</span>
         </div>
       </td>
-      <td class="tooltip-wrap">${profStr}<span class="tt">${r.profitability.toExponential(4)} raw</span></td>
+      <td class="tooltip-wrap">
+        <div class="prof-val-wrap">
+          ${profStr}
+          <span class="prof-unit">${profUnit}</span>
+        </div>
+        <span class="tt">${r.profitability.toExponential(4)} raw</span>
+      </td>
       <td class="cell-mbtc">${mbtcStr}</td>
       <td class="cell-usdday">${usdDayStr}</td>
       <td class="cell-usdmo">${usdMoStr}</td>
@@ -1465,10 +1489,15 @@
           sign + "$" + fmt2(net);
         const fac = best.factor;
         document.getElementById("best-unit").textContent =
+          // 1000: mBTC/Gh/Day
+          // 1: mBTC/Mh/Day
+          // 0.001 mBTC/Kh/Day
           fac !== null
             ? Math.abs(fac - 0.001) < 1e-6
-              ? "mBTC/KH/day"
-              : "mBTC/MH/day"
+              ? "mBTC/kH/Day"
+              : Math.abs(fac - 1) < 1e-6
+                ? "mBTC/MH/Day"
+                : "mBTC/GH/Day"
             : "···";
       }
 
