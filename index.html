@@ -1033,6 +1033,8 @@
         "yespowerR16",
         "x11",
         "qubit",
+        "whirlpool",
+        "yescryptR32",
       ]; // Thêm tên thuật toán vào đây để lọc (ví dụ: ['ghostrider', 'minotaurx']). Để trống [] để lấy tất cả.
       let algoData = {}; // algo -> { profitability, ts }
       let factorCache = {}; // algo -> factor (0.001 or 1)
@@ -1050,6 +1052,8 @@
         yespowerR16: 0.25,
         x11: 145,
         qubit: 400,
+        whirlpool: 600,
+        yescryptR32: 0.75,
       }; // algo -> KH/s per-row, default 1
       let sortCol = "netmonth";
       let sortDir = -1;
