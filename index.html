@@ -1181,18 +1181,28 @@
    CALCULATE EARNINGS
    factor = 0.001 → unit is mBTC/KH/day  → multiply directly
    factor = 1     → unit is mBTC/MH/day  → divide KH by 1000 first
+   factor = 1000  → unit is mBTC/GH/day  → divide KH by 1000000 first
+   factor = 1000000  → unit is mBTC/TH/day  → divide KH by 1000000000 first
 ───────────────────────────────────────────── */
       function calcEarnings(profitability, factor, hashrateKH) {
         // profitability is already in mBTC per the factor unit
         // factor 0.001 → mBTC/KH/day: earnings = profitability * hashrateKH
         // factor 1     → mBTC/MH/day: earnings = profitability * (hashrateKH / 1000)
+        // factor 1000  → mBTC/GH/day: earnings = profitability * (hashrateKH / 1000000)
+        // factor 1000000  → mBTC/TH/day: earnings = profitability * (hashrateKH / 1000000000)
         let mbtcDay;
         if (Math.abs(factor - 0.001) < 1e-6) {
           // mBTC/KH/day
           mbtcDay = profitability * hashrateKH;
-        } else {
+        } else if (Math.abs(factor - 1) < 1e-6) {
           // mBTC/MH/day → convert KH to MH
           mbtcDay = profitability * (hashrateKH / 1000);
+        } else if (Math.abs(factor - 1000) < 1e-6) {
+          // mBTC/GH/day → convert KH to GH
+          mbtcDay = profitability * (hashrateKH / 1000000);
+        } else if (Math.abs(factor - 1000000) < 1e-6) {
+          // mBTC/TH/day → convert KH to TH
+          mbtcDay = profitability * (hashrateKH / 1000000000);
         }
 
         const btcPrice =
@@ -1392,8 +1402,12 @@
               factorHtml = `<span class="shimmer" style="color:var(--text3);font-size:10px;">···</span>`;
             } else if (Math.abs(r.factor - 0.001) < 1e-6) {
               factorHtml = `<span class="factor-badge kh">KH/s</span>`;
-            } else {
+            } else if (Math.abs(r.factor - 1) < 1e-6) {
               factorHtml = `<span class="factor-badge mh">MH/s</span>`;
+            } else if (Math.abs(r.factor - 1000) < 1e-6) {
+              factorHtml = `<span class="factor-badge gh">GH/s</span>`;
+            } else if (Math.abs(r.factor - 1000000) < 1e-6) {
+              factorHtml = `<span class="factor-badge th">TH/s</span>`;
             }
 
             const profUnit =
@@ -1404,7 +1418,9 @@
                     ? "mBTC/MH/Day"
                     : Math.abs(r.factor - 1000) < 1e-6
                       ? "mBTC/GH/Day"
-                      : ""
+                      : Math.abs(r.factor - 1000000) < 1e-6
+                        ? "mBTC/TH/Day"
+                        : ""
                 : "";
 
             const profStr = isActive
@@ -1513,7 +1529,11 @@
               ? "mBTC/kH/Day"
               : Math.abs(fac - 1) < 1e-6
                 ? "mBTC/MH/Day"
-                : "mBTC/GH/Day"
+                : Math.abs(fac - 1000) < 1e-6
+                  ? "mBTC/GH/Day"
+                  : Math.abs(fac - 1000000) < 1e-6
+                    ? "mBTC/TH/Day"
+                    : ""
             : "···";
       }
 
