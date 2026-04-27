@@ -230,6 +230,21 @@
         text-align: center;
         white-space: nowrap;
         user-select: none;
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+      th:hover {
+        color: var(--accent);
+      }
+      th.sorted {
+        color: var(--accent);
+      }
+      th .sort-arrow {
+        margin-left: 4px;
+        opacity: 0.5;
+      }
+      th.sorted .sort-arrow {
+        opacity: 1;
       }
 
       tbody tr {
@@ -401,6 +416,10 @@
     </div>
 
     <script>
+      let globalData = null;
+      let sortCol = "algo";
+      let sortDir = 1;
+
       // Hàm lấy factor cho một algorithm (có retry nhẹ)
       async function fetchFactor(algo, retries = 1) {
         const url = `/api/proxy/zpool-factor/${algo}`;
@@ -444,19 +463,60 @@
 
       // Render table ra DOM
       function renderTable(data) {
+        if (data) globalData = data;
         const container = document.getElementById("table-container");
-        if (!data || Object.keys(data).length === 0) {
+        if (!globalData || Object.keys(globalData).length === 0) {
           container.innerHTML =
             '<div class="error">❌ NO DATA AVAILABLE. SYSTEM OFFLINE.</div>';
           return;
         }
 
-        // Sắp xếp theo tên algorithm để dễ nhìn
-        const sortedAlgos = Object.keys(data).sort();
+        // Chuyển đổi object thành array để dễ sắp xếp
+        let rowsArr = Object.entries(globalData).map(([algo, item]) => {
+          return {
+            algo: algo,
+            profit: item.profit,
+            factor: item.factor,
+            mbtcMH: item.factor !== null ? item.factor * 1000 : null,
+            mbtcGH: item.factor !== null ? item.factor / 1000 : null,
+          };
+        });
 
-        const rows = sortedAlgos
-          .map((algo) => {
-            const item = data[algo];
+        // Sắp xếp
+        rowsArr.sort((a, b) => {
+          let av, bv;
+          switch (sortCol) {
+            case "algo":
+              av = a.algo;
+              bv = b.algo;
+              break;
+            case "profit":
+              av = a.profit || 0;
+              bv = b.profit || 0;
+              break;
+            case "factor":
+              av = a.factor || 0;
+              bv = b.factor || 0;
+              break;
+            case "mh":
+              av = a.mbtcMH || 0;
+              bv = b.mbtcMH || 0;
+              break;
+            case "gh":
+              av = a.mbtcGH || 0;
+              bv = b.mbtcGH || 0;
+              break;
+            default:
+              av = a.algo;
+              bv = b.algo;
+          }
+          if (typeof av === "string") return sortDir * av.localeCompare(bv);
+          return sortDir * (av - bv);
+        });
+
+        const rowsHtml = rowsArr
+          .map((item) => {
+            const algo = item.algo;
             const profit =
               item.profit !== null && !isNaN(item.profit)
                 ? item.profit.toFixed(8)
@@ -468,10 +528,8 @@
 
             if (factorRaw !== null && !isNaN(factorRaw)) {
               factorDisplay = factorRaw.toExponential(4);
-              const mhValue = factorRaw * 1000;
-              const ghValue = factorRaw / 1000;
-              mbtcPerMH = mhValue.toExponential(4);
-              mbtcPerGH = ghValue.toExponential(4);
+              mbtcPerMH = item.mbtcMH.toExponential(4);
+              mbtcPerGH = item.mbtcGH.toExponential(4);
             }
 
             return `
@@ -491,20 +549,32 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="text-align:left">ALGORITHM</th>
-                        <th>PROFITABILITY<br><small>(DOT / DAY)</small></th>
-                        <th>BASE FACTOR<br><small>mBTC / KH / DAY</small></th>
-                        <th>CONV: MH<br><small>mBTC / MH / DAY</small></th>
-                        <th>CONV: GH<br><small>mBTC / GH / DAY</small></th>
+                        <th id="th-algo" onclick="sortBy('algo')" style="text-align:left">ALGORITHM <span class="sort-arrow">↕</span></th>
+                        <th id="th-profit" onclick="sortBy('profit')">PROFITABILITY <span class="sort-arrow">↕</span><br><small>(DOT / DAY)</small></th>
+                        <th id="th-factor" onclick="sortBy('factor')">BASE FACTOR <span class="sort-arrow">↕</span><br><small>mBTC / KH / DAY</small></th>
+                        <th id="th-mh" onclick="sortBy('mh')">CONV: MH <span class="sort-arrow">↕</span><br><small>mBTC / MH / DAY</small></th>
+                        <th id="th-gh" onclick="sortBy('gh')">CONV: GH <span class="sort-arrow">↕</span><br><small>mBTC / GH / DAY</small></th>
                         <th style="text-align:left">STATUS</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${rows}
+                    ${rowsHtml}
                 </tbody>
             </table>
         `;
         container.innerHTML = tableHtml;
+
+        // Cập nhật class sorted
+        document.getElementById(`th-${sortCol}`)?.classList.add("sorted");
+      }
+
+      function sortBy(col) {
+        if (sortCol === col) sortDir *= -1;
+        else {
+          sortCol = col;
+          sortDir = 1;
+        }
+        renderTable();
       }
 
       // Helper escape HTML
