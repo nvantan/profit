@@ -203,6 +203,52 @@
         }
       }
 
+      /* ── NAVIGATION ── */
+      .nav-tabs {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-tab {
+        text-decoration: none;
+        font-family: "Orbitron", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text2);
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        padding: 8px 18px;
+        border-radius: 4px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-tab:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(0, 212, 255, 0.05);
+      }
+
+      .nav-tab.active {
+        background: rgba(0, 212, 255, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: var(--glow);
+      }
+
+      .nav-tab svg {
+        width: 14px;
+        height: 14px;
+      }
+
       /* ── CONFIG PANEL ── */
       .config-grid {
         display: grid;
@@ -805,6 +851,18 @@
   </head>
   <body>
     <div class="container">
+      <!-- NAVIGATION -->
+      <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Calculator
+        </a>
+        <a href="factor.html" class="nav-tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+          Factors
+        </a>
+      </nav>
+
       <!-- HEADER -->
       <header class="header">
         <div class="logo-area">

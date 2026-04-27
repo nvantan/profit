@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profitability & Factor Tracker</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap");
+
+      :root {
+        --bg: #080c10;
+        --bg2: #0d1117;
+        --bg3: #111820;
+        --bg4: #161e28;
+        --border: #1e2d3d;
+        --border2: #243444;
+        --accent: #00d4ff;
+        --accent2: #00ff88;
+        --accent3: #ff6b35;
+        --accent4: #ffd700;
+        --text: #c9d1d9;
+        --text2: #8b949e;
+        --text3: #495057;
+        --red: #ff4757;
+        --green: #00ff88;
+        --yellow: #ffd700;
+        --glow: 0 0 20px rgba(0, 212, 255, 0.3);
+        --glow2: 0 0 20px rgba(0, 255, 136, 0.3);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Rajdhani", sans-serif;
+        font-size: 15px;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Scanline overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px
+        );
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      /* Grid background */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px 20px;
+      }
+
+      /* ── HEADER ── */
+      .header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .logo-area h1 {
+        font-family: "Orbitron", monospace;
+        font-size: 22px;
+        font-weight: 900;
+        color: var(--accent);
+        text-shadow: var(--glow);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .logo-area p {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 11px;
+        color: var(--text2);
+        margin-top: 4px;
+        letter-spacing: 1px;
+      }
+
+      .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 6px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 11px;
+        color: var(--text2);
+      }
+
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+        animation: pulse-green 2s infinite;
+      }
+
+      @keyframes pulse-green {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ── NAVIGATION ── */
+      .nav-tabs {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-tab {
+        text-decoration: none;
+        font-family: "Orbitron", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text2);
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        padding: 8px 18px;
+        border-radius: 4px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-tab:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(0, 212, 255, 0.05);
+      }
+
+      .nav-tab.active {
+        background: rgba(0, 212, 255, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: var(--glow);
+      }
+
+      .nav-tab svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* ── TABLE ── */
+      .table-wrap {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: auto;
+        max-height: 80vh;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+      }
+
+      thead tr {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--bg3);
+        border-bottom: 2px solid var(--border);
+      }
+
+      th {
+        padding: 12px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text2);
+        text-align: center;
+        white-space: nowrap;
+        user-select: none;
+      }
+
+      tbody tr {
+        border-bottom: 1px solid rgba(30, 45, 61, 0.6);
+        transition: background 0.15s;
+      }
+
+      tbody tr:hover {
+        background: rgba(0, 212, 255, 0.04);
+      }
+
+      td {
+        padding: 11px 14px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+      }
+
+      .algo-name {
+        text-align: left;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .profit {
+        color: var(--green);
+        font-weight: 700;
+      }
+
+      .factor {
+        color: var(--yellow);
+      }
+
+      .note {
+        font-size: 10px;
+        color: var(--text3);
+        text-align: left;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 60px;
+        color: var(--text2);
+        font-family: "Share Tech Mono", monospace;
+        font-size: 14px;
+      }
+
+      .error {
+        color: var(--red);
+        background: rgba(255, 71, 87, 0.1);
+        border: 1px solid var(--red);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-family: "Share Tech Mono", monospace;
+      }
+
+      .footer {
+        margin-top: 28px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .footer p {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text3);
+        letter-spacing: 1px;
+      }
+
+      code {
+        background: var(--bg4);
+        padding: 2px 4px;
+        border-radius: 3px;
+        color: var(--accent);
+      }
+
+      @media (max-width: 700px) {
+        .logo-area h1 {
+          font-size: 18px;
+        }
+        th,
+        td {
+          padding: 8px 6px;
+          font-size: 11px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- NAVIGATION -->
+      <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Calculator
+        </a>
+        <a href="factor.html" class="nav-tab active">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+          Factors
+        </a>
+      </nav>
+
+      <header class="header">
+        <div class="logo-area">
+          <h1>⚙️ Algorithm Dashboard</h1>
+          <p>LATEST PROFITABILITY & FACTOR TRACKER</p>
+        </div>
+        <div class="status-bar">
+          <div class="status-pill">
+            <div class="status-dot"></div>
+            <span>LIVE DATA TRACKER</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="table-wrap">
+        <div id="table-container">
+          <div class="loading">
+            ⏳ INITIALIZING SYSTEM & FETCHING API DATA...
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <p>
+          DATA: <code>algo_profitability.json</code> +
+          <code>algo_api_mbtc_mh_factor/*</code>
+        </p>
+        <p>UNIT CONVERSION: mBTC/KH/day → mBTC/MH/day & mBTC/GH/day</p>
+      </footer>
+    </div>
+
+    <script>
+      // Hàm lấy factor cho một algorithm (có retry nhẹ)
+      async function fetchFactor(algo, retries = 1) {
+        const url = `/api/proxy/zpool-factor/${algo}`;
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const text = await response.text();
+            const factor = parseFloat(text);
+            if (isNaN(factor)) throw new Error("Not a number");
+            return factor;
+          } catch (err) {
+            if (i === retries) {
+              console.warn(
+                `⚠️ Không lấy được factor cho ${algo}: ${err.message}`,
+              );
+              return null;
+            }
+            await new Promise((r) => setTimeout(r, 200));
+          }
+        }
+        return null;
+      }
+
+      // Lấy profitability mới nhất (giá trị "price" của bản ghi có time lớn nhất)
+      function getLatestProfitability(profitData) {
+        const latest = {};
+        for (const [algo, records] of Object.entries(profitData)) {
+          if (!Array.isArray(records) || records.length === 0) {
+            latest[algo] = null;
+            continue;
+          }
+          const latestRecord = records.reduce(
+            (max, cur) => (cur.time > max.time ? cur : max),
+            records[0],
+          );
+          latest[algo] = latestRecord.price;
+        }
+        return latest;
+      }
+
+      // Render table ra DOM
+      function renderTable(data) {
+        const container = document.getElementById("table-container");
+        if (!data || Object.keys(data).length === 0) {
+          container.innerHTML =
+            '<div class="error">❌ NO DATA AVAILABLE. SYSTEM OFFLINE.</div>';
+          return;
+        }
+
+        // Sắp xếp theo tên algorithm để dễ nhìn
+        const sortedAlgos = Object.keys(data).sort();
+
+        const rows = sortedAlgos
+          .map((algo) => {
+            const item = data[algo];
+            const profit =
+              item.profit !== null && !isNaN(item.profit)
+                ? item.profit.toFixed(8)
+                : "—";
+            const factorRaw = item.factor;
+            let factorDisplay = "—";
+            let mbtcPerMH = "—";
+            let mbtcPerGH = "—";
+
+            if (factorRaw !== null && !isNaN(factorRaw)) {
+              factorDisplay = factorRaw.toExponential(4);
+              const mhValue = factorRaw * 1000;
+              const ghValue = factorRaw / 1000;
+              mbtcPerMH = mhValue.toExponential(4);
+              mbtcPerGH = ghValue.toExponential(4);
+            }
+
+            return `
+                <tr>
+                    <td class="algo-name">${escapeHtml(algo).toUpperCase()}</td>
+                    <td class="profit">${profit}</td>
+                    <td class="factor">${factorDisplay}</td>
+                    <td>${mbtcPerMH}</td>
+                    <td>${mbtcPerGH}</td>
+                    <td class="note">${factorRaw !== null ? "SYSTEM_SYNC_OK" : "FACTOR_NOT_FOUND"}</td>
+                </tr>
+            `;
+          })
+          .join("");
+
+        const tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align:left">ALGORITHM</th>
+                        <th>PROFITABILITY<br><small>(DOT / DAY)</small></th>
+                        <th>BASE FACTOR<br><small>mBTC / KH / DAY</small></th>
+                        <th>CONV: MH<br><small>mBTC / MH / DAY</small></th>
+                        <th>CONV: GH<br><small>mBTC / GH / DAY</small></th>
+                        <th style="text-align:left">STATUS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+        `;
+        container.innerHTML = tableHtml;
+      }
+
+      // Helper escape HTML
+      function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function (m) {
+          if (m === "&") return "&amp;";
+          if (m === "<") return "&lt;";
+          if (m === ">") return "&gt;";
+          return m;
+        });
+      }
+
+      // Hàm chính: fetch profit + tất cả factor
+      async function loadFullData() {
+        const container = document.getElementById("table-container");
+        try {
+          // 1. Fetch profitability JSON
+          const profitRes = await fetch("/api/proxy/zpool-profitability");
+          if (!profitRes.ok) throw new Error(`API_ERROR: ${profitRes.status}`);
+          const profitData = await profitRes.json();
+          const latestProfit = getLatestProfitability(profitData);
+          const algorithms = Object.keys(latestProfit);
+          if (algorithms.length === 0) throw new Error("NO_ALGOS_FOUND");
+
+          container.innerHTML =
+            '<div class="loading">⏳ SYNCING FACTORS FOR ' +
+            algorithms.length +
+            " ALGORITHMS... PLEASE WAIT</div>";
+
+          // 2. Fetch factor cho từng algo (chạy song song nhưng có giới hạn tốc độ để tránh quá tải)
+          const factorPromises = algorithms.map((algo) => fetchFactor(algo, 1));
+          const factorResults = await Promise.allSettled(factorPromises);
+
+          // 3. Kết hợp dữ liệu
+          const finalData = {};
+          for (let i = 0; i < algorithms.length; i++) {
+            const algo = algorithms[i];
+            let factor = null;
+            if (factorResults[i].status === "fulfilled") {
+              factor = factorResults[i].value;
+            }
+            finalData[algo] = {
+              profit: latestProfit[algo],
+              factor: factor,
+            };
+          }
+
+          renderTable(finalData);
+        } catch (err) {
+          console.error(err);
+          container.innerHTML = `<div class="error">⚠️ SYSTEM_FAULT: ${err.message}. RETRY_LATER.</div>`;
+        }
+      }
+
+      // Bắt đầu
+      loadFullData();
+    </script>
+  </body>
+</html>
